@@ -2,6 +2,10 @@
 
 const Joi = require('joi');
 
+const ssl = Joi.object({
+  ca: Joi.string()
+});
+
 const server = Joi.object({
   project_name: Joi.string().default('horizon'),
   rdb_host: Joi.string().hostname().default('localhost'),
@@ -20,7 +24,7 @@ const server = Joi.object({
   rdb_user: Joi.string().allow(null),
   rdb_password: Joi.string().allow(null),
   rdb_timeout: Joi.number().allow(null),
-  rdb_ssl: Joi.object().default({}),
+  rdb_ssl: ssl.allow(null),
   max_connections: Joi.number().allow(null),
 }).unknown(false);
 

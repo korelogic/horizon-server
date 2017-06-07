@@ -2,7 +2,7 @@
 
 const Joi = require('joi');
 
-const ssl = Joi.object().default({});
+const ssl = Joi.object();
 
 const server = Joi.object({
   project_name: Joi.string().default('horizon'),

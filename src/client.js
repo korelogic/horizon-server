@@ -6,10 +6,17 @@ const Request = require('./request').Request;
 
 const Joi = require('joi');
 const websocket = require('ws');
+const uuid = require('uuid').v4
+
+const invoke = (handlers, ...args)=> handlers.forEach(fn => fn(...args))
 
 class Client {
   constructor(socket, server, metadata) {
     logger.debug('Client connection established.');
+    this._id = uuid()
+    this._closeHandlers = []
+    this._setTokenHandlers = []
+    this._noTokenHandlers = []
     this._socket = socket;
     this._server = server;
     this._auth = this._server._auth;
@@ -43,6 +50,7 @@ class Client {
     });
     this._requests.clear();
     this._server._reql_conn._clients.delete(this);
+    invoke(this._closeHanders)
   }
 
   handle_websocket_error(code, msg) {
@@ -92,12 +100,47 @@ class Client {
     }
   }
 
+  getToken() {
+    return new Promise ((resolve, reject) => {
+      if (this.token) {
+        resolve(this.token)
+      }
+      this.onToken(resolve)
+      this.onNoToken(reject)
+      this.onClose(reject)
+    })
+  }
+
+  onClose(fn) {
+    this._closeHandlers.push(fn)
+  }
+  onToken(fn) {
+    this._setTokenHandlers.push(fn)
+  }
+  onNoToken(fn) {
+    this._noTokenHandlers.push(fn)
+  }
+
+  setToken(token) {
+    this.token = token
+    invoke(this._setTokenHandlers, token)
+  }
+
+  noToken() {
+    invoke(this._noTokenHanders)
+  }
+
   handle_handshake(data) {
     const request = this.parse_request(data, schemas.handshake);
     logger.debug(`Received handshake: ${JSON.stringify(request)}`);
 
     if (request === undefined) {
       return this.close({ error: 'Invalid handshake.', error_code: 0 });
+    }
+    if (request.token) {
+      this.setToken(request.token)
+    } else {
+      this.noToken()
     }
 
     let responded = false;

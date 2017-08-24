@@ -63,7 +63,8 @@ class Auth {
   handshake(request) {
     switch (request.method) {
     case 'token':
-      return this._jwt.verify(request.token);
+      return this.generate(request.method, request.token);
+      // return this._jwt.verify(request.token);
     case 'unauthenticated':
       if (!this._allow_unauthenticated) {
         throw new Error('Unauthenticated connections are not allowed.');

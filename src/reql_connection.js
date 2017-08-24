@@ -4,6 +4,7 @@ const check = require('./error').check;
 const logger = require('./logger');
 const Metadata = require('./metadata/metadata').Metadata;
 const r = require('rethinkdb');
+const WatchedSet = require('./WatchedSet')
 
 const default_user = 'admin';
 const default_pass = '';
@@ -25,7 +26,8 @@ class ReqlConnection {
 
     this._auto_create_collection = auto_create_collection;
     this._auto_create_index = auto_create_index;
-    this._clients = new Set();
+    this._clients = new WatchedSet();
+    this._clients.onUpdate(this.writeClientConnections.bind(this));
     this._reconnect_delay = 0;
     this._retry_timer = null;
 
@@ -126,6 +128,27 @@ class ReqlConnection {
     check(this.is_ready(), 'Connection to the database is down.');
     check(this._metadata, 'Connection to the database is initializing.');
     return this._metadata;
+  }
+
+  writeClientConnections(data) {
+    const now = new Date()
+    const table = 'hz_client_connections'
+    const conn = this._conn
+
+    if (data.$add) {
+      data.$add.forEach(client => {
+        client.getToken().then(token => {
+          r.table(table).insert({ id: client._id, uuid: token, online: now }, { conflict: 'update' }).run(conn)
+        })
+      })
+    }
+    if (data.$remove) {
+      data.$remove.forEach(client => {
+        client.getToken().then(token => {
+          r.table(table).insert({ id: client._id, uuid: token, offline: now }, { conflict: 'update' }).run(conn)
+        })
+      })
+    }
   }
 }
 

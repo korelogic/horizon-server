@@ -50,7 +50,7 @@ class Client {
     });
     this._requests.clear();
     this._server._reql_conn._clients.delete(this);
-    invoke(this._closeHanders)
+    invoke(this._closeHandlers)
   }
 
   handle_websocket_error(code, msg) {
@@ -127,7 +127,7 @@ class Client {
   }
 
   noToken() {
-    invoke(this._noTokenHanders)
+    invoke(this._noTokenHandlers)
   }
 
   handle_handshake(data) {

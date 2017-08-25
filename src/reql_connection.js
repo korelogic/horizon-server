@@ -137,15 +137,15 @@ class ReqlConnection {
 
     if (data.$add) {
       data.$add.forEach(client => {
-        client.getToken().then(token => {
-          r.table(table).insert({ id: client._id, uuid: token, online: now }, { conflict: 'update' }).run(conn)
+        client.getToken().then(([authUuid, pageUuid])=> {
+          r.table(table).insert({ id: client._id, uuid: authUuid, page: pageUuid,  online: now }, { conflict: 'update' }).run(conn)
         })
       })
     }
     if (data.$remove) {
       data.$remove.forEach(client => {
-        client.getToken().then(token => {
-          r.table(table).insert({ id: client._id, uuid: token, offline: now }, { conflict: 'update' }).run(conn)
+        client.getToken().then(([authUuid, pageUuid])=> {
+          r.table(table).insert({ id: client._id, uuid: authUuid, page: pageUuid, offline: now }, { conflict: 'update' }).run(conn)
         })
       })
     }

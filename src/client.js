@@ -103,7 +103,7 @@ class Client {
   getToken() {
     return new Promise ((resolve, reject) => {
       if (this.token) {
-        resolve(this.token)
+        resolve([this.token, this.page])
       }
       this.onToken(resolve)
       this.onNoToken(reject)
@@ -121,9 +121,10 @@ class Client {
     this._noTokenHandlers.push(fn)
   }
 
-  setToken(token) {
+  setToken([token, page]) {
+    this.page = page
     this.token = token
-    invoke(this._setTokenHandlers, token)
+    invoke(this._setTokenHandlers, [token, page])
   }
 
   noToken() {
@@ -138,7 +139,7 @@ class Client {
       return this.close({ error: 'Invalid handshake.', error_code: 0 });
     }
     if (request.token) {
-      this.setToken(request.token)
+      this.setToken(request.token.split('//'))
     } else {
       this.noToken()
     }
